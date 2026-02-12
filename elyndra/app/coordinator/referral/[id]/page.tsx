@@ -27,6 +27,7 @@ export default async function ReferralDetailPage({
       const msgs = await getMessagesForThread(row.thread.id);
       return {
         id: row.thread.id,
+        homeId: row.home.id,
         homeName: row.home.name,
         homeLocation: row.home.location,
         waitingOn: row.thread.waitingOn,
@@ -36,7 +37,9 @@ export default async function ReferralDetailPage({
         messages: msgs.map((m) => ({
           id: m.id,
           senderRole: m.senderRole,
+          type: m.type,
           body: m.body,
+          metadata: m.metadata as Record<string, string> | null,
           createdAt: m.createdAt,
         })),
       };

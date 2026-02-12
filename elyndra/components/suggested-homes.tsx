@@ -30,7 +30,6 @@ import { createThread } from "@/lib/actions";
 import { generatePlacementMessage } from "@/lib/generate-message";
 import { useRole } from "@/lib/role-context";
 import { useState } from "react";
-import Link from "next/link";
 import type { ChildProfile, ChildNeeds, Priority } from "@/lib/db/types";
 import { getHomeActivityStats } from "@/lib/activity-stats";
 
@@ -230,12 +229,23 @@ function HomeMatchCard({
       {match.eligible && (
         <div>
           {match.existingThreadId ? (
-            <Link href={`/coordinator/referral/${referralId}`}>
-              <Button variant="outline" size="sm" className="w-full text-xs">
-                <MessageSquare className="h-3 w-3 mr-1.5" />
-                View Thread
-              </Button>
-            </Link>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full text-xs"
+              onClick={() => {
+                const el = document.getElementById(`thread-${match.existingThreadId}`);
+                if (el) {
+                  el.scrollIntoView({ behavior: "smooth", block: "center" });
+                  // Trigger a click to expand the thread if collapsed
+                  const btn = el.querySelector<HTMLButtonElement>("button");
+                  if (btn) btn.click();
+                }
+              }}
+            >
+              <MessageSquare className="h-3 w-3 mr-1.5" />
+              View Thread
+            </Button>
           ) : (
             <Dialog>
               <DialogTrigger

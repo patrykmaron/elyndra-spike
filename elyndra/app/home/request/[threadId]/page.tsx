@@ -1,7 +1,7 @@
 import { getThreadById, getMessagesForThread } from "@/lib/queries";
 import { notFound } from "next/navigation";
 import { RequestDetailView } from "./request-detail-view";
-import type { ChildProfile, ChildNeeds } from "@/lib/db/types";
+import type { ChildProfile, ChildNeeds, HomeConstraints, HomeCapabilities } from "@/lib/db/types";
 
 export const dynamic = "force-dynamic";
 
@@ -36,11 +36,16 @@ export default async function RequestDetailPage({
       home={{
         name: threadData.home.name,
         location: threadData.home.location,
+        freeBeds: threadData.home.freeBeds,
+        constraints: threadData.home.constraints as HomeConstraints,
+        capabilities: threadData.home.capabilities as HomeCapabilities,
       }}
       messages={msgs.map((m) => ({
         id: m.id,
         senderRole: m.senderRole,
+        type: m.type,
         body: m.body,
+        metadata: m.metadata as Record<string, string> | null,
         createdAt: m.createdAt,
       }))}
     />

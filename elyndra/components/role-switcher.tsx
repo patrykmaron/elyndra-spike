@@ -35,7 +35,7 @@ export function RoleSwitcher({ allUsers }: RoleSwitcherProps) {
         if (user) setCurrentUser(user);
       }}
     >
-      <SelectTrigger className="w-[220px] bg-background">
+      <SelectTrigger className="w-[300px] bg-background">
         <div className="flex items-center gap-2">
           {currentUser?.role === "COORDINATOR" ? (
             <User className="h-4 w-4 text-blue-600" />
@@ -45,8 +45,8 @@ export function RoleSwitcher({ allUsers }: RoleSwitcherProps) {
           <SelectValue placeholder="Select user..." />
         </div>
       </SelectTrigger>
-      <SelectContent>
-        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+      <SelectContent className="min-w-[300px]">
+        <div className="px-4 py-1.5 text-xs font-semibold text-muted-foreground">
           Coordinators
         </div>
         {allUsers

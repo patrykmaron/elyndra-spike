@@ -48,6 +48,12 @@ export type Status =
   | "CLOSED";
 export type WaitingOn = "HOME" | "COORDINATOR";
 export type Decision = "ACCEPTED" | "REJECTED";
+export type MessageType =
+  | "message"
+  | "phone_call"
+  | "meeting_note"
+  | "document"
+  | "note";
 
 export type EventType =
   | "STATUS_CHANGE"

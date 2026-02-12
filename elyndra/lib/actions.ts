@@ -11,7 +11,7 @@ import {
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { createId } from "@paralleldrive/cuid2";
-import type { Status, Decision, Role, WaitingOn, HomeConstraints, HomeCapabilities } from "@/lib/db/types";
+import type { Status, Decision, Role, WaitingOn, HomeConstraints, HomeCapabilities, MessageType } from "@/lib/db/types";
 
 // ── Update Referral Status ───────────────────────────────────────────────────
 
@@ -218,6 +218,127 @@ export async function makeDecision(
     referralId: thread.referralId,
     type: "DECISION_MADE",
     payload: { homeName, decision, reason: reason ?? null },
+    createdAt: new Date(),
+  });
+
+  revalidatePath("/coordinator");
+  revalidatePath(`/coordinator/referral/${thread.referralId}`);
+  revalidatePath("/home");
+  revalidatePath(`/home/request/${threadId}`);
+}
+
+// ── Reopen Thread (undo accept / reject) ────────────────────────────────────
+
+export async function reopenThread(threadId: string) {
+  const threadRows = await db
+    .select()
+    .from(threads)
+    .where(eq(threads.id, threadId));
+  if (!threadRows[0]) throw new Error("Thread not found");
+  const thread = threadRows[0];
+
+  const homeRows = await db
+    .select()
+    .from(homes)
+    .where(eq(homes.id, thread.homeId));
+  const homeName = homeRows[0]?.name ?? "Unknown Home";
+  const previousDecision = thread.decision;
+
+  // If was ACCEPTED → re-increment free beds and revert referral status
+  if (previousDecision === "ACCEPTED") {
+    if (homeRows[0]) {
+      await db
+        .update(homes)
+        .set({ freeBeds: homeRows[0].freeBeds + 1 })
+        .where(eq(homes.id, thread.homeId));
+    }
+
+    await db
+      .update(referrals)
+      .set({ status: "OUTREACH" })
+      .where(eq(referrals.id, thread.referralId));
+
+    await db.insert(events).values({
+      id: createId(),
+      referralId: thread.referralId,
+      type: "STATUS_CHANGE",
+      payload: { from: "PLACED", to: "OUTREACH", changedBy: "System (Reopened)" },
+      createdAt: new Date(),
+    });
+  }
+
+  // Clear decision and re-activate thread
+  await db
+    .update(threads)
+    .set({
+      decision: null,
+      decisionReason: null,
+      waitingOn: "HOME",
+      updatedAt: new Date(),
+    })
+    .where(eq(threads.id, threadId));
+
+  await db.insert(events).values({
+    id: createId(),
+    referralId: thread.referralId,
+    type: "DECISION_REOPENED",
+    payload: { homeName, previousDecision },
+    createdAt: new Date(),
+  });
+
+  revalidatePath("/coordinator");
+  revalidatePath(`/coordinator/referral/${thread.referralId}`);
+  revalidatePath("/home");
+  revalidatePath(`/home/request/${threadId}`);
+}
+
+// ── Add Timeline Entry ──────────────────────────────────────────────────────
+
+export async function addTimelineEntry(
+  threadId: string,
+  senderRole: Role,
+  type: MessageType,
+  body: string,
+  metadata?: Record<string, string> | null
+) {
+  const threadRows = await db
+    .select()
+    .from(threads)
+    .where(eq(threads.id, threadId));
+  if (!threadRows[0]) throw new Error("Thread not found");
+  const thread = threadRows[0];
+
+  await db.insert(messages).values({
+    id: createId(),
+    threadId,
+    senderRole,
+    type,
+    body,
+    metadata: metadata ?? null,
+    createdAt: new Date(),
+  });
+
+  // Only flip waitingOn for regular messages (not logs/notes/documents)
+  if (type === "message") {
+    const newWaitingOn: WaitingOn =
+      senderRole === "COORDINATOR" ? "HOME" : "COORDINATOR";
+    await db
+      .update(threads)
+      .set({ waitingOn: newWaitingOn, updatedAt: new Date() })
+      .where(eq(threads.id, threadId));
+  } else {
+    // Still update the thread timestamp for other types
+    await db
+      .update(threads)
+      .set({ updatedAt: new Date() })
+      .where(eq(threads.id, threadId));
+  }
+
+  await db.insert(events).values({
+    id: createId(),
+    referralId: thread.referralId,
+    type: "MESSAGE_SENT",
+    payload: { threadId, senderRole, entryType: type, preview: body.substring(0, 100) },
     createdAt: new Date(),
   });
 

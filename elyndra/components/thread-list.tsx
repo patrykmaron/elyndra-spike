@@ -4,22 +4,65 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Clock, Check, X, MessageSquare, Send } from "lucide-react";
+// ScrollArea replaced with plain div for reliable scrolling
+import {
+  Clock,
+  Check,
+  X,
+  MessageSquare,
+  Send,
+  Zap,
+  Phone,
+  FileText,
+  Paperclip,
+  StickyNote,
+} from "lucide-react";
 import { sendMessage } from "@/lib/actions";
 import { useRole } from "@/lib/role-context";
 import { useState } from "react";
-import type { WaitingOn, Decision, Role } from "@/lib/db/types";
+import type { WaitingOn, Decision, Role, MessageType } from "@/lib/db/types";
+import { getHomeActivityStats } from "@/lib/activity-stats";
+
+// ── Entry type config (shared with request-detail-view) ──────────────────────
+
+const ENTRY_ICON: Record<MessageType, React.ReactNode> = {
+  message: <MessageSquare className="h-3 w-3" />,
+  phone_call: <Phone className="h-3 w-3" />,
+  meeting_note: <FileText className="h-3 w-3" />,
+  document: <Paperclip className="h-3 w-3" />,
+  note: <StickyNote className="h-3 w-3" />,
+};
+
+const ENTRY_LABEL: Record<MessageType, string> = {
+  message: "Message",
+  phone_call: "Phone Call",
+  meeting_note: "Meeting",
+  document: "Document",
+  note: "Note",
+};
+
+const ENTRY_BG: Record<MessageType, string> = {
+  message: "bg-blue-50",
+  phone_call: "bg-amber-50",
+  meeting_note: "bg-purple-50",
+  document: "bg-green-50",
+  note: "bg-gray-50",
+};
+
+// ── Types ────────────────────────────────────────────────────────────────────
 
 interface ThreadMessage {
   id: string;
   senderRole: Role;
+  type: MessageType;
   body: string;
+  metadata: Record<string, string> | null;
   createdAt: Date;
 }
 
 interface ThreadData {
   id: string;
+  homeId: string;
   homeName: string;
   homeLocation: string;
   waitingOn: WaitingOn | null;
@@ -32,6 +75,8 @@ interface ThreadData {
 interface ThreadListProps {
   threads: ThreadData[];
 }
+
+// ── Components ───────────────────────────────────────────────────────────────
 
 export function ThreadList({ threads }: ThreadListProps) {
   if (threads.length === 0) {
@@ -70,6 +115,7 @@ function ThreadCard({ thread }: { thread: ThreadData }) {
   const [expanded, setExpanded] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const activityStats = getHomeActivityStats(thread.homeId);
 
   const handleSend = async () => {
     if (!newMessage.trim()) return;
@@ -83,7 +129,7 @@ function ThreadCard({ thread }: { thread: ThreadData }) {
   };
 
   return (
-    <div className="rounded-lg border">
+    <div id={`thread-${thread.id}`} className="rounded-lg border">
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full p-3 flex items-center justify-between hover:bg-muted/50 transition-colors text-left"
@@ -91,8 +137,18 @@ function ThreadCard({ thread }: { thread: ThreadData }) {
         <div>
           <div className="font-medium text-sm">{thread.homeName}</div>
           <div className="text-xs text-muted-foreground">
-            {thread.homeLocation} &middot; {thread.messages.length} message
-            {thread.messages.length !== 1 ? "s" : ""}
+            {thread.homeLocation} &middot; {thread.messages.length} entr
+            {thread.messages.length !== 1 ? "ies" : "y"}
+          </div>
+          <div className="flex items-center gap-3 text-[10px] text-muted-foreground mt-0.5">
+            <span className="flex items-center gap-1">
+              <Clock className="h-2.5 w-2.5" />
+              Online {activityStats.lastOnline}
+            </span>
+            <span className="flex items-center gap-1">
+              <Zap className="h-2.5 w-2.5" />
+              Avg reply {activityStats.avgResponseTime}
+            </span>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -126,32 +182,62 @@ function ThreadCard({ thread }: { thread: ThreadData }) {
 
       {expanded && (
         <div className="border-t">
-          <ScrollArea className="max-h-64 p-3">
+          <div className="max-h-64 overflow-y-auto p-3">
             <div className="space-y-3">
-              {thread.messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`text-sm ${
-                    msg.senderRole === "COORDINATOR"
-                      ? "ml-4 bg-blue-50 rounded-lg p-2"
-                      : "mr-4 bg-green-50 rounded-lg p-2"
-                  }`}
-                >
-                  <div className="text-[10px] font-medium text-muted-foreground mb-1">
-                    {msg.senderRole === "COORDINATOR" ? "Coordinator" : "Home Manager"}
-                    {" · "}
-                    {new Date(msg.createdAt).toLocaleString("en-GB", {
-                      day: "numeric",
-                      month: "short",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+              {thread.messages.map((msg) => {
+                const entryType = msg.type || "message";
+                return (
+                  <div
+                    key={msg.id}
+                    className={`text-sm rounded-lg p-2 ${
+                      msg.senderRole === "COORDINATOR" ? "ml-4" : "mr-4"
+                    } ${ENTRY_BG[entryType]}`}
+                  >
+                    <div className="flex items-center gap-1.5 text-[10px] font-medium text-muted-foreground mb-1">
+                      {ENTRY_ICON[entryType]}
+                      <span>{ENTRY_LABEL[entryType]}</span>
+                      <span>&middot;</span>
+                      <span>
+                        {msg.senderRole === "COORDINATOR"
+                          ? "Coordinator"
+                          : "Home Manager"}
+                      </span>
+                      <span>&middot;</span>
+                      <span>
+                        {new Date(msg.createdAt).toLocaleString("en-GB", {
+                          day: "numeric",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                    <p>{msg.body}</p>
+                    {msg.metadata && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {msg.metadata.duration && (
+                          <Badge variant="outline" className="text-[10px]">
+                            Duration: {msg.metadata.duration}
+                          </Badge>
+                        )}
+                        {msg.metadata.attendees && (
+                          <Badge variant="outline" className="text-[10px]">
+                            Attendees: {msg.metadata.attendees}
+                          </Badge>
+                        )}
+                        {msg.metadata.documentName && (
+                          <Badge variant="outline" className="text-[10px]">
+                            <Paperclip className="h-2.5 w-2.5 mr-0.5" />
+                            {msg.metadata.documentName}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <p>{msg.body}</p>
-                </div>
-              ))}
+                );
+              })}
             </div>
-          </ScrollArea>
+          </div>
 
           {thread.decision === "REJECTED" && thread.decisionReason && (
             <div className="border-t p-3 bg-red-50/50">

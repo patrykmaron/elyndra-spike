@@ -17,6 +17,13 @@ export const statusEnum = pgEnum("status", [
 ]);
 export const waitingOnEnum = pgEnum("waiting_on", ["HOME", "COORDINATOR"]);
 export const decisionEnum = pgEnum("decision", ["ACCEPTED", "REJECTED"]);
+export const messageTypeEnum = pgEnum("message_type", [
+  "message",
+  "phone_call",
+  "meeting_note",
+  "document",
+  "note",
+]);
 
 // ── Tables ───────────────────────────────────────────────────────────────────
 
@@ -105,7 +112,9 @@ export const messages = pgTable("messages", {
     .references(() => threads.id)
     .notNull(),
   senderRole: roleEnum("sender_role").notNull(),
+  type: messageTypeEnum("type").notNull().default("message"),
   body: text("body").notNull(),
+  metadata: jsonb("metadata").$type<Record<string, string> | null>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

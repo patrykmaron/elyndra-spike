@@ -4,12 +4,13 @@ import { ChildProfile } from "@/components/child-profile";
 import { SuggestedHomes } from "@/components/suggested-homes";
 import { ThreadList } from "@/components/thread-list";
 import { ActivityFeed } from "@/components/activity-feed";
+import { SuggestedActionsPanel } from "@/components/suggested-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { STATUS_LABELS } from "@/components/referral-card";
-import type { Priority, Status, ChildProfile as ChildProfileType, ChildNeeds, WaitingOn, Decision, Role } from "@/lib/db/types";
+import type { Priority, Status, ChildProfile as ChildProfileType, ChildNeeds, WaitingOn, Decision, Role, MessageType } from "@/lib/db/types";
 import type { HomeMatch } from "@/lib/matching";
 
 interface ReferralData {
@@ -25,6 +26,7 @@ interface ReferralData {
 
 interface ThreadData {
   id: string;
+  homeId: string;
   homeName: string;
   homeLocation: string;
   waitingOn: WaitingOn | null;
@@ -34,7 +36,9 @@ interface ThreadData {
   messages: {
     id: string;
     senderRole: Role;
+    type: MessageType;
     body: string;
+    metadata: Record<string, string> | null;
     createdAt: Date;
   }[];
 }
@@ -73,6 +77,13 @@ export function ReferralDetailView({
           {STATUS_LABELS[referral.status]}
         </Badge>
       </div>
+
+      {/* AI Suggested Actions */}
+      <SuggestedActionsPanel
+        referral={referral}
+        matches={matches}
+        threads={threads}
+      />
 
       {/* Two-column layout */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
