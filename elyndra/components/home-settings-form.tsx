@@ -26,6 +26,7 @@ interface HomeData {
   freeBeds: number;
   constraints: HomeConstraints;
   capabilities: HomeCapabilities;
+  isRegistered: boolean;
 }
 
 interface HomeSettingsFormProps {
@@ -73,6 +74,9 @@ function SettingsFormInner({ home }: { home: HomeData }) {
   );
   const [notes, setNotes] = useState(home.constraints.notes ?? "");
 
+  // Registration
+  const [isRegistered, setIsRegistered] = useState(home.isRegistered);
+
   // Capabilities
   const [diabetesTrained, setDiabetesTrained] = useState(
     home.capabilities.diabetesTrained
@@ -112,6 +116,7 @@ function SettingsFormInner({ home }: { home: HomeData }) {
           specialistStaff,
           mentalHealth,
         },
+        isRegistered,
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -153,6 +158,35 @@ function SettingsFormInner({ home }: { home: HomeData }) {
                 Number of beds currently available for new placements
               </p>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Ofsted Registration */}
+        <Card className={!isRegistered ? "border-amber-300 bg-amber-50/50" : ""}>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+              Ofsted Registration
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div>
+                <div className="text-sm font-medium">Registered with Ofsted</div>
+                <div className="text-xs text-muted-foreground">
+                  Indicates whether this home is currently registered with Ofsted.
+                  DoL placements require registered homes.
+                </div>
+              </div>
+              <Switch checked={isRegistered} onCheckedChange={setIsRegistered} />
+            </div>
+            {!isRegistered && (
+              <p className="text-xs text-amber-700 mt-2 flex items-center gap-1.5">
+                <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
+                Unregistered homes cannot accept Deprivation of Liberty placements.
+                If a child is placed here, Ofsted must be notified within 7 days.
+              </p>
+            )}
           </CardContent>
         </Card>
 

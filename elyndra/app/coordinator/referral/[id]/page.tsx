@@ -2,7 +2,7 @@ import { getReferralById, getThreadsForReferral, getMessagesForThread, getEvents
 import { getMatchingSuggestions } from "@/lib/matching";
 import { notFound } from "next/navigation";
 import { ReferralDetailView } from "./referral-detail-view";
-import type { ChildProfile, ChildNeeds } from "@/lib/db/types";
+import type { ChildProfile, ChildNeeds, LegalStatus } from "@/lib/db/types";
 
 export const dynamic = "force-dynamic";
 
@@ -64,6 +64,7 @@ export default async function ReferralDetailPage({
         childProfile: referral.childProfile as ChildProfile,
         needs: referral.needs as ChildNeeds,
         missingInfo: referral.missingInfo as string[],
+        legalStatus: (referral.legalStatus as LegalStatus) ?? null,
       }}
       threads={threadsWithMessages}
       matches={matches}

@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ReferralCard, STATUS_LABELS } from "@/components/referral-card";
 import { simulateReferral } from "@/lib/actions";
-import type { Status, Priority, ChildProfile, ChildNeeds } from "@/lib/db/types";
+import type { Status, Priority, ChildProfile, ChildNeeds, LegalStatus } from "@/lib/db/types";
 import { Inbox, Plus, Sparkles } from "lucide-react";
 
 interface Referral {
@@ -17,6 +17,7 @@ interface Referral {
   childProfile: unknown;
   needs: unknown;
   missingInfo: unknown;
+  legalStatus: unknown;
   createdAt: Date;
 }
 
@@ -133,6 +134,7 @@ export function CoordinatorBoard({ referrals }: CoordinatorBoardProps) {
                       childProfile={ref.childProfile as ChildProfile}
                       needs={ref.needs as ChildNeeds}
                       missingInfo={ref.missingInfo as string[]}
+                      legalStatus={ref.legalStatus as LegalStatus | null}
                       createdAt={ref.createdAt}
                     />
                   ))}

@@ -10,6 +10,7 @@ import type {
   WaitingOn,
   Decision,
   Role,
+  LegalStatus,
 } from "@/lib/db/types";
 import type { MatchReason } from "@/lib/matching";
 
@@ -61,6 +62,7 @@ interface GenerateActionsInput {
     childProfile: ChildProfile;
     needs: ChildNeeds;
     missingInfo: string[];
+    legalStatus?: LegalStatus | null;
   };
   matches: MatchSummary[];
   threads: ThreadSummary[];
@@ -110,7 +112,14 @@ REFERRAL:
 - Location: ${referral.childProfile.location} (${referral.childProfile.localAuthority})
 - Care needs: ${needsList || "None flagged"}
 - Missing info: ${referral.missingInfo.length > 0 ? referral.missingInfo.join(", ") : "None"}
-
+${referral.legalStatus?.applicable ? `
+LEGAL STATUS (Deprivation of Liberty):
+- Legal basis: ${referral.legalStatus.legalBasis}
+- Order ref: ${referral.legalStatus.orderRef ?? "Not specified"}
+- Review due: ${referral.legalStatus.reviewDue ?? "Not specified"}
+- Authorised restrictions: ${referral.legalStatus.authorisedRestrictions?.join(", ") ?? "None specified"}
+- Placement registered: ${referral.legalStatus.placementRegistered === null ? "Not confirmed" : referral.legalStatus.placementRegistered ? "Yes" : "No (UNREGISTERED)"}
+` : ""}
 ELIGIBLE HOMES (not yet contacted, sorted by fit score):
 ${eligibleHomes || "None available"}
 
@@ -135,6 +144,8 @@ Rules:
 - If a home rejected, factor in their reason when suggesting alternatives
 - Suggest status updates if the current status doesn't match the actual state (e.g. status is NEW but threads exist)
 - Messages should be professional, warm, and concise
+${referral.legalStatus?.applicable ? `- This referral involves Deprivation of Liberty. Consider suggesting actions like: requesting court order copies, verifying home registration with Ofsted, ensuring homes can meet authorised restrictions, and filing review paperwork before deadlines.
+- For DoL cases, ONLY suggest registered homes. Mention legal requirements in placement request messages.` : ""}
 
 Return ONLY valid JSON. No markdown fences, no explanation outside the array.`;
 

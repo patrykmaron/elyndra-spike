@@ -16,9 +16,10 @@ import {
   Clock,
   Info,
   FileWarning,
+  Shield,
 } from "lucide-react";
 import Link from "next/link";
-import type { Status, Priority, ChildProfile, ChildNeeds } from "@/lib/db/types";
+import type { Status, Priority, ChildProfile, ChildNeeds, LegalStatus } from "@/lib/db/types";
 import { updateReferralStatus } from "@/lib/actions";
 import { useRole } from "@/lib/role-context";
 
@@ -31,6 +32,7 @@ interface ReferralCardProps {
   childProfile: ChildProfile;
   needs: ChildNeeds;
   missingInfo: string[];
+  legalStatus?: LegalStatus | null;
   createdAt: Date;
   waitingOnHome?: boolean;
 }
@@ -106,6 +108,7 @@ export function ReferralCard({
   childProfile,
   needs,
   missingInfo,
+  legalStatus,
   createdAt,
   waitingOnHome,
 }: ReferralCardProps) {
@@ -149,6 +152,12 @@ export function ReferralCard({
                 <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
                   <FileWarning className="h-3 w-3 mr-1" />
                   {missingInfo.length} missing
+                </Badge>
+              )}
+              {legalStatus?.applicable && (
+                <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                  <Shield className="h-3 w-3 mr-1" />
+                  DoL
                 </Badge>
               )}
             </div>

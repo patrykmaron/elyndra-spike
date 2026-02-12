@@ -2,7 +2,7 @@
 
 import { generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
-import type { ChildProfile, ChildNeeds, Priority } from "@/lib/db/types";
+import type { ChildProfile, ChildNeeds, Priority, LegalStatus } from "@/lib/db/types";
 import type { MatchReason } from "@/lib/matching";
 
 interface GenerateMessageInput {
@@ -15,6 +15,7 @@ interface GenerateMessageInput {
   homeLocation: string;
   matchReasons: MatchReason[];
   coordinatorName: string;
+  legalStatus?: LegalStatus | null;
 }
 
 export async function generatePlacementMessage(
@@ -56,7 +57,13 @@ Home being contacted:
 
 Match analysis:
 ${matchSummary}
-
+${input.legalStatus?.applicable ? `
+IMPORTANT - Legal context (Deprivation of Liberty):
+- Legal basis: ${input.legalStatus.legalBasis}
+- Order ref: ${input.legalStatus.orderRef ?? "Not specified"}
+- Authorised restrictions: ${input.legalStatus.authorisedRestrictions?.join(", ") ?? "None specified"}
+- The message MUST mention that this placement involves DoL restrictions and briefly note the key restrictions the home would need to accommodate.
+` : ""}
 Coordinator name: ${input.coordinatorName}
 
 Write ONLY the message body, no subject line. Do not include greetings like "Dear" - start directly. Sign off with the coordinator's first name only.`;

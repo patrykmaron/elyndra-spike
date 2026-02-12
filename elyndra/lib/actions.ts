@@ -356,6 +356,7 @@ export async function updateHomeProfile(
     freeBeds: number;
     constraints: HomeConstraints;
     capabilities: HomeCapabilities;
+    isRegistered?: boolean;
   }
 ) {
   await db
@@ -364,6 +365,7 @@ export async function updateHomeProfile(
       freeBeds: data.freeBeds,
       constraints: data.constraints,
       capabilities: data.capabilities,
+      ...(data.isRegistered !== undefined ? { isRegistered: data.isRegistered } : {}),
     })
     .where(eq(homes.id, homeId));
 
@@ -438,6 +440,44 @@ export async function simulateReferral() {
 
   const refNum = Math.floor(Math.random() * 9000) + 1000;
 
+  // ~20% chance of DoL legal status
+  const LEGAL_BASES = ["COURT_OF_PROTECTION", "HIGH_COURT_INHERENT", "SECURE_ACCOMMODATION_S25", "MHA", "OTHER"] as const;
+  const RESTRICTION_POOL = [
+    "Locked doors overnight",
+    "Supervised internet access only",
+    "No unsupervised community access",
+    "2:1 staffing supervision",
+    "GPS tracking device required",
+    "No contact with specific family members",
+    "Restricted phone access",
+    "No overnight stays away from placement",
+  ];
+  let legalStatus = null;
+  if (Math.random() < 0.2) {
+    const basis = pick([...LEGAL_BASES]);
+    const numRestrictions = Math.floor(Math.random() * 3) + 1;
+    const shuffledRestrictions = [...RESTRICTION_POOL].sort(() => Math.random() - 0.5);
+    const today = new Date();
+    const reviewDate = new Date(today);
+    reviewDate.setDate(reviewDate.getDate() + Math.floor(Math.random() * 30) + 7);
+    const expiryDate = new Date(today);
+    expiryDate.setMonth(expiryDate.getMonth() + Math.floor(Math.random() * 5) + 1);
+    const madeDate = new Date(today);
+    madeDate.setDate(madeDate.getDate() - Math.floor(Math.random() * 30) - 5);
+
+    legalStatus = {
+      applicable: true,
+      legalBasis: basis,
+      orderRef: `${basis === "SECURE_ACCOMMODATION_S25" ? "SA" : basis === "HIGH_COURT_INHERENT" ? "HC" : "CP"}-2026-${Math.floor(Math.random() * 9000) + 1000}`,
+      court: `Family Court, ${location.city}`,
+      dateMade: madeDate.toISOString().split("T")[0],
+      expiryDate: expiryDate.toISOString().split("T")[0],
+      reviewDue: reviewDate.toISOString().split("T")[0],
+      authorisedRestrictions: shuffledRestrictions.slice(0, numRestrictions),
+      placementRegistered: Math.random() < 0.5 ? null : Math.random() < 0.6,
+    };
+  }
+
   const referralId = createId();
 
   await db.insert(referrals).values({
@@ -455,6 +495,7 @@ export async function simulateReferral() {
     },
     needs,
     missingInfo,
+    legalStatus,
     createdAt: new Date(),
   });
 

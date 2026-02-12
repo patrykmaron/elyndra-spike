@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, text, integer, jsonb, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, pgEnum, text, integer, boolean, jsonb, timestamp } from "drizzle-orm/pg-core";
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
 
@@ -47,6 +47,7 @@ export const homes = pgTable("homes", {
     specialistStaff: boolean;
     mentalHealth: boolean;
   }>(),
+  isRegistered: boolean("is_registered").notNull().default(true),
 });
 
 export const users = pgTable("users", {
@@ -84,6 +85,18 @@ export const referrals = pgTable("referrals", {
     absconding: boolean;
   }>(),
   missingInfo: jsonb("missing_info").notNull().$type<string[]>(),
+  legalStatus: jsonb("legal_status").$type<{
+    applicable: boolean;
+    legalBasis: string;
+    orderRef?: string;
+    court?: string;
+    dateMade?: string;
+    expiryDate?: string;
+    reviewDue?: string;
+    authorisedRestrictions?: string[];
+    placementRegistered?: boolean | null;
+    notes?: string;
+  }>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

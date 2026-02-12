@@ -34,6 +34,29 @@ export interface ChildNeeds {
   absconding: boolean;
 }
 
+// ── Legal / DoL types ────────────────────────────────────────────────────────
+
+export type LegalBasis =
+  | "NONE"
+  | "COURT_OF_PROTECTION"
+  | "HIGH_COURT_INHERENT"
+  | "SECURE_ACCOMMODATION_S25"
+  | "MHA"
+  | "OTHER";
+
+export interface LegalStatus {
+  applicable: boolean;
+  legalBasis: LegalBasis;
+  orderRef?: string;
+  court?: string;
+  dateMade?: string;
+  expiryDate?: string;
+  reviewDue?: string;
+  authorisedRestrictions?: string[];
+  placementRegistered?: boolean | null;
+  notes?: string;
+}
+
 // ── Enum value types ─────────────────────────────────────────────────────────
 
 export type Role = "COORDINATOR" | "HOME_MANAGER";

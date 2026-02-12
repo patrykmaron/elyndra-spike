@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { homes, referrals, threads } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import type { HomeConstraints, HomeCapabilities, ChildProfile, ChildNeeds } from "@/lib/db/types";
+import type { HomeConstraints, HomeCapabilities, ChildProfile, ChildNeeds, LegalStatus } from "@/lib/db/types";
 
 export type ReasonLevel = "pass" | "warn" | "fail";
 
@@ -33,6 +33,8 @@ export async function getMatchingSuggestions(
   const ref = refRows[0];
   const profile = ref.childProfile as ChildProfile;
   const needs = ref.needs as ChildNeeds;
+  const legalStatus = ref.legalStatus as LegalStatus | null;
+  const hasDoL = legalStatus?.applicable === true;
 
   // Fetch all homes
   const allHomes = await db.select().from(homes);
@@ -153,6 +155,26 @@ export async function getMatchingSuggestions(
     ) {
       score += 10;
       reasons.push({ level: "pass", text: `Same area (${home.location})` });
+    }
+
+    // DoL / registration checks
+    if (hasDoL) {
+      if (home.isRegistered === false) {
+        eligible = false;
+        reasons.push({
+          level: "fail",
+          text: "Home is unregistered (DoL placement requires Ofsted-registered home)",
+        });
+      } else {
+        reasons.push({
+          level: "pass",
+          text: "Home is Ofsted-registered",
+        });
+      }
+      reasons.push({
+        level: "warn",
+        text: "DoL restrictions apply — verify home can meet authorised conditions",
+      });
     }
 
     // Clamp score

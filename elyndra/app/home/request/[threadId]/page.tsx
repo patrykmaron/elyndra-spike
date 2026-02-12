@@ -1,7 +1,7 @@
 import { getThreadById, getMessagesForThread } from "@/lib/queries";
 import { notFound } from "next/navigation";
 import { RequestDetailView } from "./request-detail-view";
-import type { ChildProfile, ChildNeeds, HomeConstraints, HomeCapabilities } from "@/lib/db/types";
+import type { ChildProfile, ChildNeeds, HomeConstraints, HomeCapabilities, LegalStatus } from "@/lib/db/types";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +32,7 @@ export default async function RequestDetailPage({
         childProfile: threadData.referral.childProfile as ChildProfile,
         needs: threadData.referral.needs as ChildNeeds,
         missingInfo: threadData.referral.missingInfo as string[],
+        legalStatus: (threadData.referral.legalStatus as LegalStatus) ?? null,
       }}
       home={{
         name: threadData.home.name,

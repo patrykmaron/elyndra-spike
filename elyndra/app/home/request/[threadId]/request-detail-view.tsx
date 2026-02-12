@@ -39,6 +39,9 @@ import {
   CheckCircle2,
   XCircle,
   ArrowRight,
+  Shield,
+  Lock,
+  Calendar,
 } from "lucide-react";
 import Link from "next/link";
 import { sendMessage, makeDecision, reopenThread, addTimelineEntry } from "@/lib/actions";
@@ -53,6 +56,7 @@ import type {
   MessageType,
   HomeConstraints,
   HomeCapabilities,
+  LegalStatus,
 } from "@/lib/db/types";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -72,7 +76,17 @@ interface ReferralInfo {
   childProfile: ChildProfile;
   needs: ChildNeeds;
   missingInfo: string[];
+  legalStatus: LegalStatus | null;
 }
+
+const LEGAL_BASIS_LABELS: Record<string, string> = {
+  NONE: "None",
+  COURT_OF_PROTECTION: "Court of Protection",
+  HIGH_COURT_INHERENT: "High Court Inherent Jurisdiction",
+  SECURE_ACCOMMODATION_S25: "Secure Accommodation (S.25)",
+  MHA: "Mental Health Act",
+  OTHER: "Other Legal Basis",
+};
 
 interface HomeInfo {
   name: string;
@@ -238,6 +252,7 @@ export function RequestDetailView({
           childProfile: referral.childProfile,
           needs: referral.needs,
           missingInfo: referral.missingInfo,
+          legalStatus: referral.legalStatus,
         },
         home: {
           name: home.name,
@@ -333,6 +348,52 @@ export function RequestDetailView({
           </Button>
         )}
       </div>
+
+      {/* DoL Alert Banner */}
+      {referral.legalStatus?.applicable && (
+        <Card className="mb-4 border-red-300 bg-red-50/50">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <Shield className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+              <div className="space-y-2 flex-1">
+                <div>
+                  <p className="text-sm font-semibold text-red-800">
+                    Deprivation of Liberty &mdash; {LEGAL_BASIS_LABELS[referral.legalStatus.legalBasis] ?? referral.legalStatus.legalBasis}
+                  </p>
+                  <div className="text-xs text-red-700 mt-1 flex flex-wrap gap-x-4 gap-y-1">
+                    {referral.legalStatus.orderRef && (
+                      <span>Order: {referral.legalStatus.orderRef}</span>
+                    )}
+                    {referral.legalStatus.court && (
+                      <span>Court: {referral.legalStatus.court}</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Restrictions */}
+                {referral.legalStatus.authorisedRestrictions && referral.legalStatus.authorisedRestrictions.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {referral.legalStatus.authorisedRestrictions.map((r, i) => (
+                      <Badge key={i} variant="outline" className="bg-red-100 text-red-700 border-red-200 text-[10px]">
+                        <Lock className="h-2.5 w-2.5 mr-1" />
+                        {r}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+
+                {/* Review date */}
+                {referral.legalStatus.reviewDue && (
+                  <div className="flex items-center gap-1.5 text-xs text-red-700">
+                    <Calendar className="h-3 w-3" />
+                    Review due: {new Date(referral.legalStatus.reviewDue).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Child Summary */}
       <Card className="mb-4">

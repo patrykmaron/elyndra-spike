@@ -74,6 +74,7 @@ async function seed() {
         specialistStaff: false,
         mentalHealth: true,
       },
+      isRegistered: false,
     },
     {
       id: homeIds.maple,
@@ -171,6 +172,22 @@ async function seed() {
         absconding: false,
       },
       missingInfo: ["No safeguarding plan attached", "GP details pending"],
+      legalStatus: {
+        applicable: true,
+        legalBasis: "SECURE_ACCOMMODATION_S25",
+        orderRef: "SA-2026-0412",
+        court: "Family Court, Bristol",
+        dateMade: "2026-01-20",
+        expiryDate: "2026-04-20",
+        reviewDue: "2026-02-24",
+        authorisedRestrictions: [
+          "Locked doors overnight (22:00-07:00)",
+          "Supervised internet access only",
+          "No unsupervised community access",
+        ],
+        placementRegistered: null,
+        notes: "Initial 3-month order. LA must file review paperwork 5 working days before review date.",
+      },
       createdAt: new Date("2026-02-11T08:30:00Z"),
     },
     {
@@ -197,6 +214,22 @@ async function seed() {
         absconding: true,
       },
       missingInfo: ["Previous placement history incomplete"],
+      legalStatus: {
+        applicable: true,
+        legalBasis: "HIGH_COURT_INHERENT",
+        orderRef: "HC-2026-0087",
+        court: "Family Court, Bristol",
+        dateMade: "2026-02-01",
+        expiryDate: "2026-08-01",
+        reviewDue: "2026-03-01",
+        authorisedRestrictions: [
+          "2:1 staffing supervision at all times",
+          "No contact with father (injunction)",
+          "GPS tracking device must be worn",
+        ],
+        placementRegistered: false,
+        notes: "High Court inherent jurisdiction order. Placement is currently unregistered — Ofsted must be notified within 7 days.",
+      },
       createdAt: new Date("2026-02-10T14:00:00Z"),
     },
     {

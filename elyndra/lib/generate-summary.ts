@@ -10,6 +10,7 @@ import type {
   Decision,
   Role,
   MessageType,
+  LegalStatus,
 } from "@/lib/db/types";
 import type { HomeConstraints, HomeCapabilities } from "@/lib/db/types";
 
@@ -41,6 +42,7 @@ interface GenerateSummaryInput {
     childProfile: ChildProfile;
     needs: ChildNeeds;
     missingInfo: string[];
+    legalStatus?: LegalStatus | null;
   };
   home: {
     name: string;
@@ -90,7 +92,15 @@ REFERRAL:
 - Location: ${referral.childProfile.location} (${referral.childProfile.localAuthority})
 - Care needs: ${needsList || "None flagged"}
 - Known missing info from referral: ${referral.missingInfo.length > 0 ? referral.missingInfo.join(", ") : "None"}
-
+${referral.legalStatus?.applicable ? `
+LEGAL STATUS (Deprivation of Liberty):
+- Legal basis: ${referral.legalStatus.legalBasis}
+- Order ref: ${referral.legalStatus.orderRef ?? "Not specified"}
+- Court: ${referral.legalStatus.court ?? "Not specified"}
+- Review due: ${referral.legalStatus.reviewDue ?? "Not specified"}
+- Authorised restrictions: ${referral.legalStatus.authorisedRestrictions?.join(", ") ?? "None specified"}
+- Placement registered: ${referral.legalStatus.placementRegistered === null ? "Not confirmed" : referral.legalStatus.placementRegistered ? "Yes" : "No (UNREGISTERED)"}
+` : ""}
 HOME PROFILE:
 - Name: ${home.name}
 - Location: ${home.location}
@@ -120,6 +130,11 @@ For fitAssessment:
 - "good": child need matches a home capability, or constraint is met
 - "warning": something to consider but not blocking (e.g. near age limit, location mismatch)
 - "concern": child need that the home lacks capability for, or constraint violated
+${referral.legalStatus?.applicable ? `
+IMPORTANT: This placement involves Deprivation of Liberty. In your assessment:
+- Include fit items about whether the home can meet the authorised restrictions
+- Flag any compliance concerns (e.g. registration status, staffing requirements)
+- In next steps, include any DoL-specific actions (e.g. confirm you can enforce restrictions, check review dates)` : ""}
 
 Be specific and practical. Return ONLY valid JSON, no markdown fences.`;
 

@@ -14,6 +14,7 @@ export default async function HomeSettingsPage() {
     freeBeds: h.freeBeds,
     constraints: h.constraints as HomeConstraints,
     capabilities: h.capabilities as HomeCapabilities,
+    isRegistered: h.isRegistered,
   }));
 
   return <HomeSettingsForm homes={homesForClient} />;
